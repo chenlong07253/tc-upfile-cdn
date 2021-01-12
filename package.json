@@ -1,5 +1,5 @@
 {
-  "name": "tc-cdn-upfile",
+  "name": "tc-upfile-cdn",
   "version": "1.0.0",
   "description": "upfile",
   "main": "index.js",
