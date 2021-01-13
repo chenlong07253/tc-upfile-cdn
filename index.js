@@ -14,7 +14,7 @@ let vm = {
   async get() {
     let arr = []
     let getFiles = async (filePath = '', fileName = '') => {
-      let p = path.join(__dirname, config.outputDir, filePath, fileName)
+      let p = path.join(process.cwd(), config.outputDir, filePath, fileName)
       let [err, stats] = await to(fs.promises.stat(p))
       err && console.log(err)
       // 目录
@@ -72,7 +72,7 @@ let vm = {
     let form = new FormData()
     form.append('bucket_name', config.bucketName)
     form.append('key', config.key)
-    form.append('file', fs.createReadStream(path.resolve(__dirname, config.outputDir, n.filePath, n.fileName)))
+    form.append('file', fs.createReadStream(path.resolve(process.cwd(), config.outputDir, n.filePath, n.fileName)))
 
     let { data } = await axios({
       method: 'POST',
