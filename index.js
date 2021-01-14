@@ -28,7 +28,8 @@ let vm = {
       }
       // 文件
       else if (stats && stats.isFile()) {
-        arr.push({ filePath, fileName })
+        let key = config.key + (filePath ? `${filePath}/` : '')
+        arr.push({ filePath, fileName, key })
       }
     }
 
@@ -38,14 +39,14 @@ let vm = {
     // console.log(arr)
   },
   // 文件是否存在
-  async isExist(n) {
+  async isExist(n, i) {
 
     let { data } = await axios({
       method: 'POST',
       url: config.isExistUrl,
       data: querystring.stringify({
         'bucket_name': config.bucketName,
-        'key': config.key,
+        'key': n.key,
         'keys': n.fileName,
       }),
       headers: {
@@ -54,24 +55,28 @@ let vm = {
         'user-token': config.userToken,
       }
     })
+    let exist = ''
     // console.log(data)
     if (data && data.result && data.result[0] && data.result[0].exist === false) {
       // console.log(config.key + n.fileName, '没有上传过')
+      exist = '新文件'
     }
     else if (data && data.result && data.result[0] && data.result[0].exist === true) {
       // console.log(config.key + n.fileName, '已上传过')
+      exist = '覆盖'
     }
     else {
       console.log('-------------isExist err --------------')
+      exist = '出错'
     }
 
-    await this.upload(n)
+    await this.upload(n, i, exist)
   },
   // 上传
-  async upload(n) {
+  async upload(n, i, exist) {
     let form = new FormData()
     form.append('bucket_name', config.bucketName)
-    form.append('key', config.key)
+    form.append('key', n.key)
     form.append('file', fs.createReadStream(path.resolve(process.cwd(), config.outputDir, n.filePath, n.fileName)))
 
     let { data } = await axios({
@@ -86,14 +91,11 @@ let vm = {
     })
 
     if (data && data.code === 0) {
-      console.log('上传文件:', config.key + n.fileName, '成功')
+      console.log(`${i + 1}:`, vm.config.leoUrl + vm.config.bucketName + n.key + n.fileName, '成功', exist)
     }
     else {
-      console.log(data, config.key + n.fileName)
+      console.log(data, n.key + n.fileName)
     }
-  },
-  getConfig() {
-
   },
   async init() {
     try {
@@ -104,13 +106,11 @@ let vm = {
       return
     }
     console.log(new Date().toLocaleString(), 'bucket:', config.bucketName, '目录:', config.key)
+    vm.config = config
 
     await this.get()
 
-    this.arr = this.arr.filter(n => {
-      let ext = n.fileName.match(/[^\.]*$/)[0]
-      return ['js', 'css'].indexOf(ext) >= 0
-    })
+    config.beforeUpLoad && config.beforeUpLoad(vm)
 
     for (var i = 0; i < this.arr.length; i++) {
       let n = this.arr[i]
